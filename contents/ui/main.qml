@@ -67,7 +67,7 @@ PlasmoidItem {
                 text: i18nc("@action:button", "Go Home")
 
                 onClicked:{
-                    var braveurl = 'https://search.brave.com/'
+                    var braveurl = 'https://start.duckduckgo.com/'
                     duckduckgoWebView.url = braveurl ;
                 }
             }
