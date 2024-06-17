@@ -1,10 +1,10 @@
 /*
- *   SPDX-FileCopyrightText: 2014, 2016 Mikhail Ivchenko <ematirov@gmail.com>
- *   SPDX-FileCopyrightText: 2018 Kai Uwe Broulik <kde@privat.broulik.de>
- *   SPDX-FileCopyrightText: 2020 Sora Steenvoort <sora@dillbox.me>
- *
- *   SPDX-License-Identifier: GPL-2.0-or-later
- */
+* SPDX-FileCopyrightText: 2014, 2016 Mikhail Ivchenko <ematirov@gmail.com>
+* SPDX-FileCopyrightText: 2018 Kai Uwe Broulik <kde@privat.broulik.de>
+* SPDX-FileCopyrightText: 2020 Sora Steenvoort <sora@dillbox.me>
+*
+* SPDX-License-Identifier: GPL-2.0-or-later
+*/
 
 import QtQuick
 import QtWebEngine
@@ -40,9 +40,9 @@ PlasmoidItem {
         TapHandler {
             property bool wasExpanded: false
 
-            acceptedButtons: Qt.LeftButton
+                acceptedButtons: Qt.LeftButton
 
-            onPressedChanged: if (pressed) {
+                onPressedChanged: if (pressed) {
                 wasExpanded = duckduckgoroot.expanded;
             }
             onTapped: duckduckgoroot.expanded = !wasExpanded
@@ -59,14 +59,14 @@ PlasmoidItem {
         Layout.minimumWidth: duckduckgoroot.switchWidth
         Layout.minimumHeight: duckduckgoroot.switchHeight
 
-        RowLayout{
+        RowLayout {
             Layout.fillWidth: true
 
             PlasmaComponents3.Button {
                 // icon.name: "Go Home"
                 text: i18nc("@action:button", "Go Home")
 
-                onClicked:{
+                onClicked: {
                     var braveurl = 'https://start.duckduckgo.com/'
                     duckduckgoWebView.url = braveurl ;
                 }
@@ -96,13 +96,15 @@ PlasmoidItem {
                 Layout.fillWidth: true
                 onAccepted: {
                     var url = text;
-                    if (url.indexOf(":/") < 0) {
+                    if (url.indexOf(":/") < 0)
+                    {
                         url = "http://" + url;
                     }
                     duckduckgoWebView.url = url;
                 }
                 onActiveFocusChanged: {
-                    if (activeFocus) {
+                    if (activeFocus)
+                    {
                         selectAll();
                     }
                 }
@@ -129,7 +131,8 @@ PlasmoidItem {
                     id: tooltip
                 }
 
-                function show(text, icon, tooltipText, cb) {
+                function show(text, icon, tooltipText, cb)
+                {
                     infoButton.text = text;
                     infoButton.icon.name = icon;
                     tooltip.text = tooltipText;
@@ -137,7 +140,8 @@ PlasmoidItem {
                     infoButton.visible = true;
                 }
 
-                function dismiss() {
+                function dismiss()
+                {
                     infoButton.visible = false;
                 }
             }
@@ -199,133 +203,159 @@ PlasmoidItem {
                 interval: 100
 
                 readonly property int minViewWidth: plasmoid.configuration.minViewWidth
-                readonly property bool useMinViewWidth: plasmoid.configuration.useMinViewWidth
-                readonly property int constantZoomFactor: plasmoid.configuration.constantZoomFactor
+                    readonly property bool useMinViewWidth: plasmoid.configuration.useMinViewWidth
+                        readonly property int constantZoomFactor: plasmoid.configuration.constantZoomFactor
 
-                onTriggered: {
-                    var newZoom = 1;
-                    if (useMinViewWidth) {
-                        // Try to fit contents for a smaller screen
-                        newZoom = Math.min(1, duckduckgoWebView.width / minViewWidth);
-                        // make sure value is valid
-                        newZoom = Math.max(0.25, newZoom);
-                    } else {
-                        newZoom = constantZoomFactor / 100.0;
+                            onTriggered: {
+                                var newZoom = 1;
+                                if (useMinViewWidth)
+                                {
+                                    // Try to fit contents for a smaller screen
+                                    newZoom = Math.min(1, duckduckgoWebView.width / minViewWidth);
+                                    // make sure value is valid
+                                    newZoom = Math.max(0.25, newZoom);
+                                } else {
+                                newZoom = constantZoomFactor / 100.0;
+                            }
+                            duckduckgoWebView.zoomFactor = newZoom;
+                            // setting the zoom factor does not always work on the first try; also, numbers get rounded
+                            if (Math.round(1000 * duckduckgoWebView.zoomFactor) != Math.round(1000 * newZoom))
+                            {
+                                updateZoomTimer.restart();
+                            }
+                        }
                     }
-                    duckduckgoWebView.zoomFactor = newZoom;
-                    // setting the zoom factor does not always work on the first try; also, numbers get rounded
-                    if (Math.round(1000 * duckduckgoWebView.zoomFactor) != Math.round(1000 * newZoom)) {
-                        updateZoomTimer.restart();
+
+                    // This reimplements WebEngineView context menu for links to add a "open externally" entry
+                    // since you cannot add custom items there yet
+                    // there's a FIXME comment about that in QQuickWebEngineViewPrivate::contextMenuRequested
+                    PlasmaExtras.Menu {
+                        id: linkContextMenu
+                        visualParent: duckduckgoWebView
+
+                        property string link
+
+                        PlasmaExtras.MenuItem {
+                            text: i18nc("@action:inmenu", "Open Link in Browser")
+                            icon: "internet-web-browser"
+                            onClicked: Qt.openUrlExternally(linkContextMenu.link)
+                        }
+
+                        PlasmaExtras.MenuItem {
+                            text: i18nc("@action:inmenu", "Copy Link Address")
+                            icon: "edit-copy"
+                            onClicked: duckduckgoWebView.triggerWebAction(WebEngineView.CopyLinkToClipboard)
+                        }
                     }
-                }
-            }
 
-            // This reimplements WebEngineView context menu for links to add a "open externally" entry
-            // since you cannot add custom items there yet
-            // there's a FIXME comment about that in QQuickWebEngineViewPrivate::contextMenuRequested
-            PlasmaExtras.Menu {
-                id: linkContextMenu
-                visualParent: duckduckgoWebView
+                    WebEngineView {
+                        id: duckduckgoWebView
+                        anchors.fill: parent
+                        onUrlChanged: plasmoid.configuration.url = url;
+                        Component.onCompleted: url = plasmoid.configuration.url;
 
-                property string link
+                        readonly property bool useMinViewWidth: plasmoid.configuration.useMinViewWidthh
 
-                PlasmaExtras.MenuItem {
-                    text: i18nc("@action:inmenu", "Open Link in Browser")
-                    icon:  "internet-web-browser"
-                    onClicked: Qt.openUrlExternally(linkContextMenu.link)
-                }
 
-                PlasmaExtras.MenuItem {
-                    text: i18nc("@action:inmenu", "Copy Link Address")
-                    icon: "edit-copy"
-                    onClicked: duckduckgoWebView.triggerWebAction(WebEngineView.CopyLinkToClipboard)
-                }
-            }
+                            WebEngineProfile {
+                                id: duckduckgoProfile
+                                httpUserAgent: getUserAgent()
+                                storageName: "duckduck"
+                                offTheRecord: false
+                                httpCacheType: WebEngineProfile.DiskHttpCache
+                                persistentCookiesPolicy: WebEngineProfile.ForcePersistentCookies
+                            }
 
-            WebEngineView {
-                id: duckduckgoWebView
-                anchors.fill: parent
-                onUrlChanged: plasmoid.configuration.url = url;
-                Component.onCompleted: url = plasmoid.configuration.url;
+                            profile: duckduckgoProfile
 
-                readonly property bool useMinViewWidth : plasmoid.configuration.useMinViewWidth
+                        }
+                        Connections {
+                            target: plasmoid.configuration
 
-                Connections {
-                    target: plasmoid.configuration
+                            function onMinViewWidthChanged()
+                            {updateZoomTimer.start()}
 
-                    function onMinViewWidthChanged() {updateZoomTimer.start()}
+                                function onUseMinViewWidthChanged()
+                                {updateZoomTimer.start()}
 
-                    function onUseMinViewWidthChanged() {updateZoomTimer.start()}
+                                    function onConstantZoomFactorChanged()
+                                    {updateZoomTimer.start()}
 
-                    function onConstantZoomFactorChanged() {updateZoomTimer.start()}
+                                        function onUseConstantZoomChanged()
+                                        {updateZoomTimer.start()}
+                                        }
 
-                    function onUseConstantZoomChanged() {updateZoomTimer.start()}
-                }
+                                        onLinkHovered: hoveredUrl => {
+                                        if (hoveredUrl.toString() !== "")
+                                        {
+                                            mouseArea.cursorShape = Qt.PointingHandCursor;
+                                        } else {
+                                        mouseArea.cursorShape = Qt.ArrowCursor;
+                                    }
+                                }
 
-                onLinkHovered: hoveredUrl => {
-                    if (hoveredUrl.toString() !== "") {
-                        mouseArea.cursorShape = Qt.PointingHandCursor;
-                    } else {
-                        mouseArea.cursorShape = Qt.ArrowCursor;
+                                onWidthChanged: {
+                                    if (useMinViewWidth)
+                                    {
+                                        updateZoomTimer.start()
+                                    }
+                                }
+
+                                onLoadingChanged: loadingInfo => {
+                                if (loadingInfo.status === WebEngineLoadingInfo.LoadStartedStatus)
+                                {
+                                    infoButton.dismiss();
+                                } else if (loadingInfo.status === WebEngineLoadingInfo.LoadSucceededStatus && useMinViewWidth) {
+                                updateZoomTimer.start();
+                            }
+                        }
+
+                        onContextMenuRequested: request => {
+                        if (request.mediaType === ContextMenuRequest.MediaTypeNone && request.linkUrl.toString() !== "")
+                        {
+                            linkContextMenu.link = request.linkUrl;
+                            linkContextMenu.open(request.position.x, request.position.y);
+                            request.accepted = true;
+                        }
                     }
-                }
 
-                onWidthChanged: {
-                    if (useMinViewWidth) {
-                        updateZoomTimer.start()
-                    }
-                }
-
-                onLoadingChanged: loadingInfo => {
-                    if (loadingInfo.status === WebEngineLoadingInfo.LoadStartedStatus) {
-                        infoButton.dismiss();
-                    } else if (loadingInfo.status === WebEngineLoadingInfo.LoadSucceededStatus && useMinViewWidth) {
-                        updateZoomTimer.start();
-                    }
-                }
-
-                onContextMenuRequested: request => {
-                    if (request.mediaType === ContextMenuRequest.MediaTypeNone && request.linkUrl.toString() !== "") {
-                        linkContextMenu.link = request.linkUrl;
-                        linkContextMenu.open(request.position.x, request.position.y);
-                        request.accepted = true;
-                    }
-                }
-
-                onNavigationRequested: request => {
+                    onNavigationRequested: request => {
                     var url = request.url;
 
-                    if (request.userInitiated) {
+                    if (request.userInitiated)
+                    {
                         Qt.openUrlExternally(url);
                     } else {
-                        infoButton.show(i18nc("An unwanted popup was blocked", "Popup blocked"), "document-close",
-                                        i18n("Click here to open the following blocked popup:\n%1", url), function () {
-                            Qt.openUrlExternally(url);
-                            infoButton.dismiss();
-                        });
-                    }
-                }
-
-                onIconChanged: {
-                    if (loading && icon == "") {
-                        return;
-                    }
-                    Plasmoid.configuration.favIcon = icon.toString().slice(16 /* image://favicon/ */);
-                }
-            }
-
-            MouseArea {
-                id: mouseArea
-                anchors.fill: parent
-                acceptedButtons: Qt.BackButton | Qt.ForwardButton
-                onPressed: mouse => {
-                    if (mouse.button === Qt.BackButton) {
-                        duckduckgoWebView.goBack();
-                    } else if (mouse.button === Qt.ForwardButton) {
-                        duckduckgoWebView.goForward();
-                    }
-                }
+                    infoButton.show(i18nc("An unwanted popup was blocked", "Popup blocked"), "document-close",
+                    i18n("Click here to open the following blocked popup:\n%1", url), function () {
+                    Qt.openUrlExternally(url);
+                    infoButton.dismiss();
+                });
             }
         }
+
+        onIconChanged: {
+            if (loading && icon == "")
+            {
+                return;
+            }
+            Plasmoid.configuration.favIcon = icon.toString().slice(16 /* image://favicon/ */);
+        }
     }
+
+    MouseArea {
+        id: mouseArea
+        anchors.fill: parent
+        acceptedButtons: Qt.BackButton | Qt.ForwardButton
+        onPressed: mouse => {
+        if (mouse.button === Qt.BackButton)
+        {
+            duckduckgoWebView.goBack();
+        } else if (mouse.button === Qt.ForwardButton) {
+        duckduckgoWebView.goForward();
+    }
+}
+}
+}
+}
 }
